@@ -7,6 +7,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"github.com/Kodo-Robotics/hermit/pkg/virtualbox"
 )
 
 var vmName string
@@ -16,7 +17,10 @@ var createCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a new Virtualbox VM",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("📦 Creating VirtualBox VM: %s\n", vmName)
+		err := virtualbox.CreateVM(vmName)
+		if err != nil {
+			fmt.Println("❌", err)
+		}
 	},
 }
 
