@@ -1,5 +1,5 @@
 /*
-Copyright © 2025 Kodo-Robotics
+Copyright © 2025 Kodo Robotics
 
 */
 package cmd
