@@ -8,38 +8,40 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/Kodo-Robotics/hermit/pkg/config"
 )
 
-type HermitConfig struct {
-	Name		string	`json:"name"`
-	CPUs		int		`json:"cpus"`
-	Memory		int		`json:"memory"`
-	DiskSizeMB	int		`json:"disk_size_mb"`
-	ISOPath		string	`json:"iso_path"`
-}
-
 var initCmd = &cobra.Command{
-	Use:   "init",
+	Use:   "init [box-name]",
 	Short: "Initialize a new Hermit VM configuration file (hermit.json)",
 	Run: func(cmd *cobra.Command, args []string) {
-		config := HermitConfig{
-			Name:		"hermit-vm",
-			CPUs:		1,
-			Memory:		1024,
-			DiskSizeMB:	10000,
-			ISOPath:	"/absolute/path/to/ubuntu.iso",
-		}
-
-		// Check if file already exists
 		if _, err := os.Stat("hermit.json"); err == nil {
-			fmt.Println("⚠️  hermit.json already exists. Aborting.")
+			fmt.Println("⚠️  hermit.json already exists. Use --force to overwrite (not yet supported).")
 			return
 		}
 
-		jsonData, err := json.MarshalIndent(config, "", " ")
+		boxName := "ubuntu/focal64"
+		if len(args) > 0 && strings.TrimSpace(args[0]) != "" {
+			boxName = args[0]
+		}
+
+		cfg := config.HermitConfig{
+			Box:			boxName,
+			Provider:		"virtualbox",
+			Name:			"hermit-vm",
+			CPUs:			1,
+			Memory:			1024,
+			DiskSizeMB:		10000,
+			ForwardedPorts:	[]config.Port {
+				{Guest: 22, Host: 2222},
+			},
+		}
+
+		jsonData, err := json.MarshalIndent(cfg, "", " ")
 		if err != nil {
 			fmt.Println("❌ Could not write hermit.json:", err)
 			return
@@ -53,7 +55,7 @@ var initCmd = &cobra.Command{
 
 		absPath, _ := filepath.Abs("hermit.json")
 		fmt.Println("🌱 Created hermit.json at", absPath)
-		fmt.Println("📦 Next: Edit the ISO path, then run `hermit up`")
+		fmt.Println("📦 Next: Run `hermit up` to start the VM")
 	},
 }
 
