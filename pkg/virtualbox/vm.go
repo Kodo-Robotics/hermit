@@ -16,16 +16,14 @@ func runVBoxManage(args ...string) error {
 	return nil
 }
 
-func CreateAndStartVM(name string, memory int, cpus int, diskSize int, isoPath string) error {
-	diskPath := filepath.Join(".", fmt.Sprintf("%s.vdi", name))
+func CreateAndStartVM(name string, memory int, cpus int, vdiPath string) error {
+	diskPath, err := filepath.Abs(vdiPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve VDI path: %v", err)
+	}
 
 	fmt.Println("📦 Creating VM...")
 	if err := runVBoxManage("createvm", "--name", name, "--register"); err != nil {
-		return err
-	}
-
-	fmt.Println("💾 Creating virtual hard disk...")
-	if err := runVBoxManage("createhd", "--filename", diskPath, "--size", fmt.Sprintf("%d", diskSize)); err != nil {
 		return err
 	}
 
@@ -34,17 +32,8 @@ func CreateAndStartVM(name string, memory int, cpus int, diskSize int, isoPath s
 		return err
 	}
 
-	fmt.Println("📎 Attaching hard disk...")
+	fmt.Println("📎 Attaching virtual hard disk...")
 	if err := runVBoxManage("storageattach", name, "--storagectl", "SATA Controller", "--port", "0", "--device", "0", "--type", "hdd", "--medium", diskPath); err != nil {
-		return err
-	}
-
-	fmt.Println("📀 Attaching ISO...")
-	if err := runVBoxManage("storagectl", name, "--name", "IDE Controller", "--add", "ide"); err != nil {
-		return err
-	}
-
-	if err := runVBoxManage("storageattach", name, "--storagectl", "IDE Controller", "--port", "0", "--device", "0", "--type", "dvddrive", "--medium", isoPath); err != nil {
 		return err
 	}
 
@@ -53,13 +42,8 @@ func CreateAndStartVM(name string, memory int, cpus int, diskSize int, isoPath s
 		return err
 	}
 
-	fmt.Println("🚀 Setting boot order...")
-	if err := runVBoxManage("modifyvm", name, "--boot1", "dvd", "--boot2", "disk", "--boot3", "none"); err != nil {
-		return err
-	}
-
 	fmt.Println("🎬 Starting VM in headless mode...")
-	if err := runVBoxManage("startvm", name, "--type", "gui"); err != nil {
+	if err := runVBoxManage("startvm", name, "--type", "headless"); err != nil {
 		return err
 	}
 
