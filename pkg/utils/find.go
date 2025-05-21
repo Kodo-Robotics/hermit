@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func FindDiskImage(boxDir string) (string, error) {
+func FindOVF(boxDir string) (string, error) {
 	files, err := os.ReadDir(boxDir)
 	if err != nil {
 		return "", err
@@ -24,10 +24,10 @@ func FindDiskImage(boxDir string) (string, error) {
 			continue
 		}
 
-		if strings.HasSuffix(lowerName, ".vdi") || strings.HasSuffix(lowerName, ".vmdk") {
+		if strings.HasSuffix(lowerName, ".ovf") {
 			return filepath.Join(boxDir, file.Name()), nil
 		}
 	}
 
-	return "", fmt.Errorf("no .vdi or .vmdk file found in %s", boxDir)
+	return "", fmt.Errorf("no .ovf file found in %s", boxDir)
 }

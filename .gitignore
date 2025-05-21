@@ -27,3 +27,4 @@ go.work.sum
 # hermit folder
 .hermit
 hermit.json
+*.box

@@ -31,13 +31,9 @@ var initCmd = &cobra.Command{
 
 		cfg := config.HermitConfig{
 			Box:				boxName,
-			Provider:			"virtualbox",
 			Name:				"hermit-vm",
 			CPUs:				2,
-			Memory:				2048,
-			DiskSizeMB:			10000,
-			VRAM:				16,
-			GraphicsController:	"vmsvga",
+			Memory:				4096,
 			ForwardedPorts:		[]config.Port {
 				{Guest: 22, Host: 2222},
 			},

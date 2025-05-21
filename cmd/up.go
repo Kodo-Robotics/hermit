@@ -25,26 +25,55 @@ var upCmd = &cobra.Command{
 			return
 		}
 
+		// Check if VM already exists
+		state, err := virtualbox.GetVMState(cfg.Name)
+		if err == nil {
+			if state == "running" {
+				fmt.Println("✅ VM is already running.")
+				return
+			} else if state == "poweroff" || state == "saved" {
+				fmt.Println("🔁 VM exists. Starting...")
+				if err := virtualbox.StartVM(cfg.Name); err != nil {
+					fmt.Println("❌ Failed to start VM:", err)
+				} else {
+					fmt.Println("✅ VM started successfully.")
+				}
+				return
+			}
+		}
+
 		boxDir := filepath.Join(".hermit", "boxes", strings.ReplaceAll(cfg.Box, "/", "_"))
-		diskPath, err := utils.FindDiskImage(boxDir)
+		ovfPath, err := utils.FindOVF(boxDir)
 		if err != nil {
 			fmt.Println("❌", err)
 			fmt.Println("👉 Run `hermit box add <path>.box` to install the box.")
 			return
 		}
 
-		fmt.Println("🚀 Launching VM...")
-		err = virtualbox.CreateAndStartVM(
-			cfg.Name, 
-			cfg.Memory, 
-			cfg.CPUs, 
-			cfg.VRAM,
-			cfg.GraphicsController,
-			diskPath,
-		)
-		if err != nil {
+		fmt.Printf("📦 Importing VM '%s' from box: %s\n", cfg.Name, cfg.Box)
+		if err := virtualbox.ImportOVF(ovfPath, cfg.Name); err != nil {
+			fmt.Println("❌ Failed to import OVF:", err)
+			return
+		}
+
+		fmt.Println("⚙️ Applying CPU and memory settings...")
+		if err := virtualbox.ModifyVM(cfg.Name, cfg.Memory, cfg.CPUs); err != nil {
+			fmt.Println("⚠️ Failed to modify VM settings:", err)
+		}
+
+		for _, port := range cfg.ForwardedPorts {
+			fmt.Printf("🔁 Forwarding host:%d -> guest:%d\n", port.Host, port.Guest)
+			if err := virtualbox.AddPortForward(cfg.Name, port.Guest, port.Host); err != nil {
+				fmt.Printf("⚠️ Failed to add port forward: %v\n", err)
+			}
+		}
+
+		fmt.Println("🚀 Starting VM...")
+		if err := virtualbox.StartVM(cfg.Name); err != nil {
 			fmt.Println("❌ Error starting VM:", err)
 		}
+
+		fmt.Println("✅ VM is running!")
 	},
 }
 

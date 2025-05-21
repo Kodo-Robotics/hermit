@@ -8,8 +8,55 @@ package virtualbox
 import (
 	"fmt"
 	"os/exec"
-	"path/filepath"
+	"strings"
 )
+
+func ImportOVF(ovfPath string, vmName string) error {
+	return runVBoxManage("import", ovfPath, "--vsys", "0", "--vmname", vmName)
+}
+
+func GetVMState(vmName string) (string, error) {
+	cmd := exec.Command("VBoxManage", "showvminfo", vmName, "--machinereadable")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("VM not found or error checking state: %v", err)
+	}
+
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "VMState=") {
+			state := strings.Trim(strings.Split(line, "=")[1], "\"")
+			return state, nil
+		}
+	}
+
+	return "", fmt.Errorf("VMState not found")
+}
+
+func ModifyVM(vmName string, memory int, cpus int) error {
+	args := []string{"modifyvm", vmName}
+	if memory > 0 {
+		args = append(args, "--memory", fmt.Sprintf("%d", memory))
+	}
+	if cpus > 0 {
+		args = append(args, "--cpus", fmt.Sprintf("%d", cpus))
+	}
+
+	return runVBoxManage(args...)
+}
+
+func AddPortForward(vmName string, guestPort, hostPort int) error {
+	rule := fmt.Sprintf("fwd%d,tcp,,%d,,%d", guestPort, hostPort, guestPort)
+	return runVBoxManage("modifyvm", vmName, "--natpf1", rule)
+}
+
+func StartVM(vmName string) error {
+	return runVBoxManage("startvm", vmName, "--type", "headless")
+}
+
+func HaltVM(vmName string) error {
+	return runVBoxManage("controlvm", vmName, "acpipowerbutton")
+}
 
 func runVBoxManage(args ...string) error {
 	cmd := exec.Command("VBoxManage", args...)
@@ -18,49 +65,5 @@ func runVBoxManage(args ...string) error {
 		return fmt.Errorf("VBoxManage error: %v\n%s", err, string(out))
 	}
 
-	return nil
-}
-
-func CreateAndStartVM(name string, memory int, cpus int, vram int, graphicsController string, vdiPath string) error {
-	diskPath, err := filepath.Abs(vdiPath)
-	if err != nil {
-		return fmt.Errorf("failed to resolve VDI path: %v", err)
-	}
-
-	fmt.Println("📦 Creating VM...")
-	if err := runVBoxManage("createvm", "--name", name, "--register"); err != nil {
-		return err
-	}
-
-	fmt.Println("🔌 Adding SATA controller...")
-	if err := runVBoxManage("storagectl", name, "--name", "SATA Controller", "--add", "sata", "--controller", "IntelAhci"); err != nil {
-		return err
-	}
-
-	fmt.Println("📎 Attaching virtual hard disk...")
-	if err := runVBoxManage("storageattach", name, "--storagectl", "SATA Controller", "--port", "0", "--device", "0", "--type", "hdd", "--medium", diskPath); err != nil {
-		return err
-	}
-
-	fmt.Println("⚙️ Configuring VM resources...")
-	if err := runVBoxManage("modifyvm", name, "--memory", fmt.Sprintf("%d", memory), "--cpus", fmt.Sprintf("%d", cpus)); err != nil {
-		return err
-	}
-
-	if err := runVBoxManage("modifyvm", name, "--vram", fmt.Sprintf("%d", vram), "--graphicscontroller", graphicsController); err != nil {
-		return err
-	}
-
-	fmt.Println("🚀 Setting boot order to disk...")
-	if err := runVBoxManage("modifyvm", name, "--boot1", "disk", "--boot2", "none"); err != nil {
-		return err
-	}
-
-	fmt.Println("🎬 Starting VM in headless mode...")
-	if err := runVBoxManage("startvm", name, "--type", "headless"); err != nil {
-		return err
-	}
-
-	fmt.Println("✅ VM started successfully.")
 	return nil
 }
