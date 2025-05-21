@@ -51,6 +51,11 @@ func CreateAndStartVM(name string, memory int, cpus int, vram int, graphicsContr
 		return err
 	}
 
+	fmt.Println("🚀 Setting boot order to disk...")
+	if err := runVBoxManage("modifyvm", name, "--boot1", "disk", "--boot2", "none"); err != nil {
+		return err
+	}
+
 	fmt.Println("🎬 Starting VM in headless mode...")
 	if err := runVBoxManage("startvm", name, "--type", "headless"); err != nil {
 		return err
