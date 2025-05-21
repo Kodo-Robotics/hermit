@@ -21,7 +21,7 @@ func runVBoxManage(args ...string) error {
 	return nil
 }
 
-func CreateAndStartVM(name string, memory int, cpus int, vdiPath string) error {
+func CreateAndStartVM(name string, memory int, cpus int, vram int, graphicsController string, vdiPath string) error {
 	diskPath, err := filepath.Abs(vdiPath)
 	if err != nil {
 		return fmt.Errorf("failed to resolve VDI path: %v", err)
@@ -44,6 +44,10 @@ func CreateAndStartVM(name string, memory int, cpus int, vdiPath string) error {
 
 	fmt.Println("⚙️ Configuring VM resources...")
 	if err := runVBoxManage("modifyvm", name, "--memory", fmt.Sprintf("%d", memory), "--cpus", fmt.Sprintf("%d", cpus)); err != nil {
+		return err
+	}
+
+	if err := runVBoxManage("modifyvm", name, "--vram", fmt.Sprintf("%d", vram), "--graphicscontroller", graphicsController); err != nil {
 		return err
 	}
 

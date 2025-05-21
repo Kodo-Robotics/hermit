@@ -5,15 +5,14 @@ Copyright © 2025 Kodo Robotics
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/Kodo-Robotics/hermit/pkg/virtualbox"
 	"github.com/Kodo-Robotics/hermit/pkg/config"
+	"github.com/Kodo-Robotics/hermit/pkg/utils"
 )
 
 var upCmd = &cobra.Command{
@@ -27,20 +26,22 @@ var upCmd = &cobra.Command{
 		}
 
 		boxDir := filepath.Join(".hermit", "boxes", strings.ReplaceAll(cfg.Box, "/", "_"))
-		diskPath, err := findDiskImage(boxDir)
+		diskPath, err := utils.FindDiskImage(boxDir)
 		if err != nil {
 			fmt.Println("❌", err)
-			return
-		}
-
-		if _, err := os.Stat(vdiPath); os.IsNotExist(err) {
-			fmt.Printf("📦 VDI not found for box '%s'.\n", cfg.Box)
 			fmt.Println("👉 Run `hermit box add <path>.box` to install the box.")
 			return
 		}
 
 		fmt.Println("🚀 Launching VM...")
-		err = virtualbox.CreateAndStartVM(cfg.Name, cfg.Memory, cfg.CPUs, diskPath)
+		err = virtualbox.CreateAndStartVM(
+			cfg.Name, 
+			cfg.Memory, 
+			cfg.CPUs, 
+			cfg.VRAM,
+			cfg.GraphicsController,
+			diskPath,
+		)
 		if err != nil {
 			fmt.Println("❌ Error starting VM:", err)
 		}
@@ -49,23 +50,4 @@ var upCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(upCmd)
-}
-
-func findDiskImage(boxDir string) (string, error) {
-	files, err := os.ReadDir(boxDir)
-	if err != nil {
-		return "", err
-	}
-
-	for _, file := range files {
-		if !file.Type().IsRegular() {
-			continue
-		}
-		lowerName := strings.ToLower(file.Name())
-		if strings.HasSuffix(lowerName, ".vdi") || strings.HasSuffix(lowerName, ".vmdk") {
-			return filepath.Join(boxDir, file.Name()), nil
-		}
-	}
-
-	return "", fmt.Errorf("no .vdi or .vmdk file found in %s", boxDir)
 }

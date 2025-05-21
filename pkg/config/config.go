@@ -12,13 +12,15 @@ import (
 )
 
 type HermitConfig struct {
-	Box				string	`json:"box"`
-	Provider		string	`json:"provider"`
-	Name			string	`json:"name"`
-	CPUs			int		`json:"cpus"`
-	Memory			int		`json:"memory"`
-	DiskSizeMB		int		`json:"disk_size_mb"`
-	ForwardedPorts	[]Port	`json:"forwarded_ports"`
+	Box					string	`json:"box"`
+	Provider			string	`json:"provider"`
+	Name				string	`json:"name"`
+	CPUs				int		`json:"cpus"`
+	Memory				int		`json:"memory"`
+	DiskSizeMB			int		`json:"disk_size_mb"`
+	VRAM				int		`json:"vram"`
+	GraphicsController	string	`json:"graphics_controller"`
+	ForwardedPorts		[]Port	`json:"forwarded_ports"`
 }
 
 type Port struct {
