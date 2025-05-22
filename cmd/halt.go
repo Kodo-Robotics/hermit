@@ -18,25 +18,11 @@ var haltCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, err := config.LoadConfig()
 
-		state, err := virtualbox.GetVMState(cfg.Name)
-		if err != nil {
-			fmt.Println("❌ Could not determine VM state:", err)
-			return
-		}
-
-		if state == "poweroff" {
-			fmt.Println("⏹️ VM is already stopped.")
-			return
-		}
-
-		fmt.Println("🛑 Sending shutdown signal to VM...")
 		err = virtualbox.HaltVM(cfg.Name)
 		if err != nil {
-			fmt.Printf("❌ Failed to halt VM: %v\n", err)
+			fmt.Printf("❌", err)
 			return
 		}
-
-		fmt.Println("✅ Shutdown signal sent. VM will power off shortly.")
 	},
 }
 

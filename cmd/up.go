@@ -26,20 +26,12 @@ var upCmd = &cobra.Command{
 		}
 
 		// Check if VM already exists
-		state, err := virtualbox.GetVMState(cfg.Name)
+		_, err = virtualbox.GetVMState(cfg.Name)
 		if err == nil {
-			if state == "running" {
-				fmt.Println("✅ VM is already running.")
-				return
-			} else if state == "poweroff" || state == "saved" {
-				fmt.Println("🔁 VM exists. Starting...")
-				if err := virtualbox.StartVM(cfg.Name); err != nil {
-					fmt.Println("❌ Failed to start VM:", err)
-				} else {
-					fmt.Println("✅ VM started successfully.")
-				}
-				return
+			if err := virtualbox.StartVM(cfg.Name); err != nil {
+				fmt.Println("❌ Failed to start VM:", err)
 			}
+			return
 		}
 
 		boxDir := filepath.Join(".hermit", "boxes", strings.ReplaceAll(cfg.Box, "/", "_"))

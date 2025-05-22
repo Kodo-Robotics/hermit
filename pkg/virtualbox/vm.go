@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 func ImportOVF(ovfPath string, vmName string) error {
@@ -51,11 +52,86 @@ func AddPortForward(vmName string, guestPort, hostPort int) error {
 }
 
 func StartVM(vmName string) error {
-	return runVBoxManage("startvm", vmName, "--type", "headless")
+	state, err := GetVMState(vmName)
+	if err != nil {
+		return fmt.Errorf("VM '%s' not found: %v", vmName, err)
+	}
+
+	switch state {
+	case "running":
+		fmt.Println("✅ VM is already running.")
+		return nil
+	
+	case "poweroff", "saved", "aborted":
+		fmt.Println("🔁 VM exists. Starting...")
+		err := runVBoxManage("startvm", vmName, "--type", "headless")
+		if err != nil {
+			return fmt.Errorf("failed to start VM: %v", err)
+		}
+
+		// Wait for VM to be running
+		fmt.Print("⏳ Waiting for VM to start")
+		timeout := time.After(30 * time.Second)
+		tick := time.Tick(1 * time.Second)
+
+		for {
+			select {
+			case <-timeout:
+				return fmt.Errorf("\n⏰ Timeout waiting for VM to start")
+			case <-tick:
+				current, _ := GetVMState(vmName)
+				if current == "running" {
+					fmt.Println("\n✅ VM is now running.")
+					return nil
+				}
+				fmt.Print(".")
+			}
+		}
+	
+	default:
+		return fmt.Errorf("🛑 VM is in unsupported state: %s", state)
+	}
 }
 
 func HaltVM(vmName string) error {
-	return runVBoxManage("controlvm", vmName, "acpipowerbutton")
+	state, err := GetVMState(vmName)
+	if err != nil {
+		return fmt.Errorf("could not determine VM state: %v", err)
+	}
+	if state == "poweroff" {
+		fmt.Println("⏹️ VM is already stopped.")
+		return nil
+	}
+
+	// Send graceful shutdown
+	fmt.Println("🛑 Sending ACPI shutdown signal...")
+	err = runVBoxManage("controlvm", vmName, "acpipowerbutton")
+	if err != nil {
+		fmt.Println("⚠️ ACPI shutdown failed. Trying hard poweroff...")
+		err = runVBoxManage("controlvm", vmName, "poweroff")
+		if err != nil {
+			return fmt.Errorf("failed to force shutdown: %v", err)
+		}
+	}
+
+	// Wait for VM to shutdown
+	fmt.Print("⏳ Waiting for VM to shut down")
+	timeout := time.After(30 * time.Second)
+	tick := time.Tick(1 * time.Second)
+
+	for {
+		select {
+		case <-timeout:
+			return fmt.Errorf("\n⏰ Timeout waiting for VM to shut down")
+		case <-tick:
+			current, _ := GetVMState(vmName)
+			if current == "poweroff" || current == "aborted" {
+				fmt.Println("\n✅ VM is powered off.")
+				return nil
+			}
+			fmt.Print(".")
+		}
+	}
 }
 
 func runVBoxManage(args ...string) error {
