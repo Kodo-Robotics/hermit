@@ -32,7 +32,13 @@ var upCmd = &cobra.Command{
 				fmt.Println("❌ Failed to start VM:", err)
 			}
 			return
+		} else {
+			// VM not found - check for stale vbox
+			if err := virtualbox.CleanupStaleVBoxFile(cfg.Name); err != nil {
+				fmt.Println("⚠️ Warning: could not clean stale .vbox file:", err)
+			}
 		}
+		
 
 		boxDir := filepath.Join(".hermit", "boxes", strings.ReplaceAll(cfg.Box, "/", "_"))
 		ovfPath, err := utils.FindOVF(boxDir)
@@ -64,8 +70,6 @@ var upCmd = &cobra.Command{
 		if err := virtualbox.StartVM(cfg.Name); err != nil {
 			fmt.Println("❌ Error starting VM:", err)
 		}
-
-		fmt.Println("✅ VM is running!")
 	},
 }
 

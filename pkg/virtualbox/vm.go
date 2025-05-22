@@ -12,8 +12,23 @@ import (
 	"time"
 )
 
-func ImportOVF(ovfPath string, vmName string) error {
-	return runVBoxManage("import", ovfPath, "--vsys", "0", "--vmname", vmName)
+func ImportOVF(ovfPath string, desiredName string) error {
+	originalName, err := ExtractVMNameFromOVF(ovfPath)
+	if err != nil {
+		return fmt.Errorf("failed to parse OVF: %v", err)
+	}
+
+	if err := runVBoxManage("import", ovfPath); err != nil {
+		return fmt.Errorf("import failed: %v", err)
+	}
+
+	if originalName != desiredName {
+		_ = removeVBoxVMFolder(desiredName)
+		if err := runVBoxManage("modifyvm", originalName, "--name", desiredName); err != nil {
+			return fmt.Errorf("failed to rename VM: %v", err)
+		}
+	}
+	return nil
 }
 
 func GetVMState(vmName string) (string, error) {
@@ -132,6 +147,26 @@ func HaltVM(vmName string) error {
 			fmt.Print(".")
 		}
 	}
+}
+
+func DestroyVM(vmName string, deleteDisks bool) error {
+	state, err := GetVMState(vmName)
+	if err != nil {
+		return fmt.Errorf("VM '%s' not found or already removed", vmName)
+	}
+
+	if state == "running" {
+		fmt.Println("🛑 VM is running, stopping before destroy...")
+		if err := HaltVM(vmName); err != nil {
+			fmt.Printf("⚠️ Failed to stop VM before destroy: %v\n", err)
+		}
+	}
+
+	args := []string{"unregistervm", vmName}
+	if deleteDisks {
+		args = append(args, "--delete")
+	}
+	return runVBoxManage(args...)
 }
 
 func runVBoxManage(args ...string) error {

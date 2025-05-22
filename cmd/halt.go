@@ -20,7 +20,7 @@ var haltCmd = &cobra.Command{
 
 		err = virtualbox.HaltVM(cfg.Name)
 		if err != nil {
-			fmt.Printf("❌", err)
+			fmt.Println("❌", err)
 			return
 		}
 	},
