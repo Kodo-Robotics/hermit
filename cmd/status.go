@@ -11,9 +11,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var haltCmd = &cobra.Command{
-	Use:   "halt",
-	Short: "Gracefully shut down the Hermit VM",
+var statusCmd = &cobra.Command{
+	Use:   "status",
+	Short: "Show the current status of the Hermit VM",
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, err := config.LoadConfig()
 		if err != nil {
@@ -21,14 +21,18 @@ var haltCmd = &cobra.Command{
 			return
 		}
 
-		err = virtualbox.HaltVM(cfg.Name)
+		state, err := virtualbox.GetVMState(cfg.Name)
 		if err != nil {
-			fmt.Println("❌", err)
+			fmt.Printf("❌ VM '%s' not found in VirtualBox.\n", cfg.Name)
 			return
 		}
+
+		fmt.Printf("🖥️ VM Name: %s\n", cfg.Name)
+		fmt.Printf("📦 Box:     %s\n", cfg.Box)
+		fmt.Printf("⚙️  State:   %s\n", state)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(haltCmd)
+	rootCmd.AddCommand(statusCmd)
 }

@@ -1,15 +1,14 @@
 /*
 Copyright © 2025 Kodo Robotics
-
 */
 package cmd
 
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/Kodo-Robotics/hermit/pkg/config"
 	"github.com/Kodo-Robotics/hermit/pkg/virtualbox"
+	"github.com/spf13/cobra"
 )
 
 var deleteDisks bool
@@ -19,6 +18,10 @@ var destroyCmd = &cobra.Command{
 	Short: "Unregister and optionally delete the Hermit VM",
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, err := config.LoadConfig()
+		if err != nil {
+			fmt.Println("❌ Error reading hermit.json:", err)
+			return
+		}
 
 		if !deleteDisks {
 			fmt.Println("💡 Use '--delete' next time to fully remove disk and .vbox file.")
