@@ -24,7 +24,10 @@ go.work.sum
 # env file
 .env
 
-# hermit folder
+# testing folders
 .hermit
 hermit.json
 *.box
+
+# build folder
+build
