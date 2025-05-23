@@ -76,7 +76,7 @@ func StartVM(vmName string) error {
 	case "running":
 		fmt.Println("✅ VM is already running.")
 		return nil
-	
+
 	case "poweroff", "saved", "aborted":
 		fmt.Println("🔁 VM exists. Starting...")
 		err := runVBoxManage("startvm", vmName, "--type", "headless")
@@ -102,7 +102,7 @@ func StartVM(vmName string) error {
 				fmt.Print(".")
 			}
 		}
-	
+
 	default:
 		return fmt.Errorf("🛑 VM is in unsupported state: %s", state)
 	}
@@ -167,6 +167,32 @@ func DestroyVM(vmName string, deleteDisks bool) error {
 		args = append(args, "--delete")
 	}
 	return runVBoxManage(args...)
+}
+
+func ConfigureNetworking(vmName string, netMode string, bridgeAdapter string, hostOnlyAdapter string) error {
+	if err := runVBoxManage("modifyvm", vmName, "--nic1", "nat"); err != nil {
+		return fmt.Errorf("failed to configure NIC1 as NAT: %v", err)
+	}
+
+	switch netMode {
+	case "", "none":
+		return nil
+
+	case "bridged":
+		if bridgeAdapter == "" {
+			return fmt.Errorf("bridge_adapter must be set for bridged mode")
+		}
+		return runVBoxManage("modifyvm", vmName, "--nic2", "bridged", "--bridgeadapter2", bridgeAdapter)
+
+	case "hostonly":
+		if hostOnlyAdapter == "" {
+			return fmt.Errorf("hostonly_adapter must be set for hostonly mode")
+		}
+		return runVBoxManage("modifyvm", vmName, "--nic2", "hostonly", "--hostonlyadapter2", hostOnlyAdapter)
+
+	default:
+		return fmt.Errorf("invalid network mode: %s", netMode)
+	}
 }
 
 func runVBoxManage(args ...string) error {

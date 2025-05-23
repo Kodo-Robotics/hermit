@@ -1,6 +1,5 @@
 /*
 Copyright © 2025 Kodo Robotics
-
 */
 package cmd
 
@@ -8,11 +7,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 	"path/filepath"
+	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/Kodo-Robotics/hermit/pkg/config"
+	"github.com/spf13/cobra"
 )
 
 var initCmd = &cobra.Command{
@@ -30,12 +29,15 @@ var initCmd = &cobra.Command{
 		}
 
 		cfg := config.HermitConfig{
-			Box:				boxName,
-			Name:				"hermit-vm",
-			CPUs:				2,
-			Memory:				4096,
-			ForwardedPorts:		[]config.Port {
-				{Guest: 22, Host: 2222},
+			Box:    boxName,
+			Name:   "hermit-vm",
+			CPUs:   2,
+			Memory: 4096,
+			Network: config.NetworkConfig{
+				Mode: "nat",
+				ForwardedPorts: []config.Port{
+					{Guest: 22, Host: 2222},
+				},
 			},
 		}
 

@@ -1,15 +1,35 @@
 /*
 Copyright © 2025 Kodo Robotics
-
 */
 package virtualbox
 
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strings"
 )
+
+func ListBridgeAdapters() ([]string, error) {
+	cmd := exec.Command("VBoxManage", "list", "bridgedifs")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list bridged adapters: %v", err)
+	}
+	return parseAdapterNames(out), nil
+}
+
+func ListHostOnlyAdapters() ([]string, error) {
+	cmd := exec.Command("VBoxManage", "list", "hostonlyifs")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list host-only adapters: %v", err)
+	}
+	return parseAdapterNames(out), nil
+}
 
 func CleanupStaleVBoxFile(vmName string) error {
 	var basePath string
@@ -20,7 +40,7 @@ func CleanupStaleVBoxFile(vmName string) error {
 		basePath = filepath.Join(os.Getenv("HOME"), "VirtualBox VMs", vmName)
 	}
 
-	vboxFile := filepath.Join(basePath, vmName + ".vbox")
+	vboxFile := filepath.Join(basePath, vmName+".vbox")
 
 	if _, err := os.Stat(vboxFile); err == nil {
 		fmt.Println("⚠️ Removing stale .vbox file:", vboxFile)
@@ -30,6 +50,16 @@ func CleanupStaleVBoxFile(vmName string) error {
 	}
 
 	return nil
+}
+
+func parseAdapterNames(data []byte) []string {
+	var names []string
+	re := regexp.MustCompile(`(?m)^Name:\s+(.*)$`)
+	matches := re.FindAllSubmatch(data, -1)
+	for _, m := range matches {
+		names = append(names, strings.TrimSpace(string(m[1])))
+	}
+	return names
 }
 
 func removeVBoxVMFolder(vmName string) error {

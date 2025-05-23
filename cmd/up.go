@@ -1,18 +1,19 @@
 /*
 Copyright © 2025 Kodo Robotics
-
 */
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"github.com/Kodo-Robotics/hermit/pkg/virtualbox"
 	"github.com/Kodo-Robotics/hermit/pkg/config"
 	"github.com/Kodo-Robotics/hermit/pkg/utils"
+	"github.com/Kodo-Robotics/hermit/pkg/virtualbox"
+	"github.com/spf13/cobra"
 )
 
 var upCmd = &cobra.Command{
@@ -38,7 +39,6 @@ var upCmd = &cobra.Command{
 				fmt.Println("⚠️ Warning: could not clean stale .vbox file:", err)
 			}
 		}
-		
 
 		boxDir := filepath.Join(".hermit", "boxes", strings.ReplaceAll(cfg.Box, "/", "_"))
 		ovfPath, err := utils.FindOVF(boxDir)
@@ -59,7 +59,15 @@ var upCmd = &cobra.Command{
 			fmt.Println("⚠️ Failed to modify VM settings:", err)
 		}
 
-		for _, port := range cfg.ForwardedPorts {
+		fmt.Println("🌐 Configuring networking...")
+		selectNetworkAdapter(&cfg.Network)
+		net := cfg.Network
+		if err := virtualbox.ConfigureNetworking(cfg.Name, net.Mode, net.BridgeAdapter, net.HostOnlyAdapter); err != nil {
+			fmt.Println("❌ Failed to configure networking:", err)
+			return
+		}
+
+		for _, port := range net.ForwardedPorts {
 			fmt.Printf("🔁 Forwarding host:%d -> guest:%d\n", port.Host, port.Guest)
 			if err := virtualbox.AddPortForward(cfg.Name, port.Guest, port.Host); err != nil {
 				fmt.Printf("⚠️ Failed to add port forward: %v\n", err)
@@ -75,4 +83,42 @@ var upCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(upCmd)
+}
+
+func selectNetworkAdapter(net *config.NetworkConfig) {
+	reader := bufio.NewReader(os.Stdin)
+
+	switch net.Mode {
+	case "bridged":
+		if net.BridgeAdapter == "" {
+			adapters, _ := virtualbox.ListBridgeAdapters()
+			fmt.Println("🌐 Select a bridged adapter:")
+			for i, a := range adapters {
+				fmt.Printf("  [%d] %s\n", i+1, a)
+			}
+			fmt.Print("Enter number: ")
+			input, _ := reader.ReadString('\n')
+			i := 0
+			fmt.Sscanf(strings.TrimSpace(input), "%d", &i)
+			if i > 0 && i <= len(adapters) {
+				net.BridgeAdapter = adapters[i-1]
+			}
+		}
+
+	case "hostonly":
+		if net.HostOnlyAdapter == "" {
+			adapters, _ := virtualbox.ListHostOnlyAdapters()
+			fmt.Println("🔒 Select a host-only adapter:")
+			for i, a := range adapters {
+				fmt.Printf("  [%d] %s\n", i+1, a)
+			}
+			fmt.Print("Enter number: ")
+			input, _ := reader.ReadString('\n')
+			i := 0
+			fmt.Sscanf(strings.TrimSpace(input), "%d", &i)
+			if i > 0 && i <= len(adapters) {
+				net.HostOnlyAdapter = adapters[i-1]
+			}
+		}
+	}
 }
