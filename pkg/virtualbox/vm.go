@@ -38,11 +38,12 @@ func GetVMState(vmName string) (string, error) {
 		return "", fmt.Errorf("VM not found or error checking state: %v", err)
 	}
 
-	lines := strings.Split(string(output), "\n")
+	cleanOutput := strings.ReplaceAll(string(output), "\r\n", "\n")
+
+	lines := strings.Split(cleanOutput, "\n")
 	for _, line := range lines {
 		if strings.HasPrefix(line, "VMState=") {
-			state := strings.Trim(strings.Split(line, "=")[1], "\"")
-			return state, nil
+			return strings.Trim(strings.TrimSpace(strings.SplitN(line, "=", 2)[1]), "\""), nil
 		}
 	}
 

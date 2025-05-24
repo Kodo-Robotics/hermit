@@ -28,7 +28,7 @@ var addCmd = &cobra.Command{
 
 		baseName := strings.TrimSuffix(filepath.Base(boxFile), filepath.Ext(boxFile))
 		boxName := strings.ReplaceAll(baseName, ".", "_")
-		destDir := filepath.Join(".hermit", "boxes", boxName)
+		destDir := utils.GetBoxPath(boxName)
 
 		if err := os.MkdirAll(destDir, 0755); err != nil {
 			fmt.Println("❌ Failed to create box directory:", err)

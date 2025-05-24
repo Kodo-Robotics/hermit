@@ -7,7 +7,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/Kodo-Robotics/hermit/pkg/config"
@@ -40,7 +39,7 @@ var upCmd = &cobra.Command{
 			}
 		}
 
-		boxDir := filepath.Join(".hermit", "boxes", strings.ReplaceAll(cfg.Box, "/", "_"))
+		boxDir := utils.GetBoxPath(cfg.Box)
 		ovfPath, err := utils.FindOVF(boxDir)
 		if err != nil {
 			fmt.Println("❌", err)
