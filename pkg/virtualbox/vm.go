@@ -133,12 +133,16 @@ func HaltVM(vmName string) error {
 	// Wait for VM to shutdown
 	fmt.Print("⏳ Waiting for VM to shut down")
 	timeout := time.After(30 * time.Second)
-	tick := time.Tick(1 * time.Second)
+	tick := time.Tick(3 * time.Second)
+	resend := time.Tick(10 * time.Second)
 
 	for {
 		select {
 		case <-timeout:
 			return fmt.Errorf("\n⏰ Timeout waiting for VM to shut down")
+		case <-resend:
+			fmt.Print(" ↻")
+			_ = runVBoxManage("controlvm", vmName, "acpipowerbutton")
 		case <-tick:
 			current, _ := GetVMState(vmName)
 			if current == "poweroff" || current == "aborted" {
