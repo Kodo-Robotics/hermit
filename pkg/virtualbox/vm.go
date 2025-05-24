@@ -67,6 +67,11 @@ func AddPortForward(vmName string, guestPort, hostPort int) error {
 	return runVBoxManage("modifyvm", vmName, "--natpf1", rule)
 }
 
+func DeletePortForwardRule(vmName string, guestPort int) error {
+	ruleName := fmt.Sprintf("fwd%d", guestPort)
+	return runVBoxManage("modifyvm", vmName, "--natpf1", "delete", ruleName)
+}
+
 func StartVM(vmName string) error {
 	state, err := GetVMState(vmName)
 	if err != nil {
@@ -180,7 +185,7 @@ func ConfigureNetworking(vmName string, netMode string, bridgeAdapter string, ho
 	}
 
 	switch netMode {
-	case "", "none":
+	case "", "nat":
 		return nil
 
 	case "bridged":

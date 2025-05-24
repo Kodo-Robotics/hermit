@@ -68,6 +68,10 @@ var upCmd = &cobra.Command{
 
 		for _, port := range net.ForwardedPorts {
 			fmt.Printf("🔁 Forwarding host:%d -> guest:%d\n", port.Host, port.Guest)
+
+			// Delete existing rule if exists
+			_ = virtualbox.DeletePortForwardRule(cfg.Name, port.Guest)
+
 			if err := virtualbox.AddPortForward(cfg.Name, port.Guest, port.Host); err != nil {
 				fmt.Printf("⚠️ Failed to add port forward: %v\n", err)
 			}
