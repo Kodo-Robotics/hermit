@@ -33,7 +33,7 @@ jobs:
 
       - name: Build binary
         run: |
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o hermit-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} ./cmd/hermit
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o hermit-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} .
 
       - name: Upload to GitHub Releases
         uses: softprops/action-gh-release@v1
