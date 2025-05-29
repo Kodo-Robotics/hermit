@@ -16,6 +16,11 @@ func GetHermitRoot() string {
 	return filepath.Join(home, ".hermit")
 }
 
+func GetHermitBoxPath() string {
+	path := filepath.Join(GetHermitRoot(), "boxes")
+	return path
+}
+
 func GetBoxPath(boxName string) string {
 	safe := filepath.Join(GetHermitRoot(), "boxes", sanitizeName(boxName))
 	return safe

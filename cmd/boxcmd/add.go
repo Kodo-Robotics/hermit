@@ -1,8 +1,7 @@
 /*
 Copyright © 2025 Kodo Robotics
-
 */
-package cmd
+package boxcmd
 
 import (
 	"fmt"
@@ -10,15 +9,23 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
+	"github.com/Kodo-Robotics/hermit/pkg/core"
 	"github.com/Kodo-Robotics/hermit/pkg/utils"
+	"github.com/spf13/cobra"
 )
+
+var boxAlias string
 
 var addCmd = &cobra.Command{
 	Use:   "add <box-file>",
 	Short: "Add a Hermit box from a .box file",
-	Args: cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) < 1 {
+			fmt.Println("❌ Please provide a path to the .box file")
+			return
+		}
+
 		boxFile := args[0]
 
 		if _, err := os.Stat(boxFile); os.IsNotExist(err) {
@@ -26,8 +33,10 @@ var addCmd = &cobra.Command{
 			return
 		}
 
-		baseName := strings.TrimSuffix(filepath.Base(boxFile), filepath.Ext(boxFile))
-		boxName := strings.ReplaceAll(baseName, ".", "_")
+		boxName := boxAlias
+		if boxName == "" {
+			boxName = strings.TrimSuffix(filepath.Base(boxFile), filepath.Ext(boxFile))
+		}
 		destDir := utils.GetBoxPath(boxName)
 
 		if err := os.MkdirAll(destDir, 0755); err != nil {
@@ -41,10 +50,17 @@ var addCmd = &cobra.Command{
 			return
 		}
 
+		// Register box
+		if err := core.AddBox(boxName, destDir); err != nil {
+			fmt.Println("❌ Failed to register box in registry:", err)
+			return
+		}
+
 		fmt.Printf("✅ Box '%s' added successfully.\n", boxName)
 	},
 }
 
 func init() {
-	boxCmd.AddCommand(addCmd)
+	addCmd.Flags().StringVarP(&boxAlias, "name", "n", "", "Custom name (alias) for this box")
+	BoxCmd.AddCommand(addCmd)
 }

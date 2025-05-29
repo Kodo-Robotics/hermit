@@ -1,18 +1,15 @@
 /*
 Copyright © 2025 Kodo Robotics
-
 */
-package cmd
+package boxcmd
 
 import (
 	"github.com/spf13/cobra"
 )
 
-var boxCmd = &cobra.Command{
+var BoxCmd = &cobra.Command{
 	Use:   "box",
 	Short: "Manage Hermit boxes",
 }
 
-func init() {
-	rootCmd.AddCommand(boxCmd)
-}
+func init() {}
