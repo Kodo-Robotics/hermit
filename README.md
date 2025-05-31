@@ -70,6 +70,27 @@ sudo mv hermit /usr/local/bin/
 - 📦 Package and share VMs as .box files
 - ⚡ Blazing fast CLI (built in Go)
 
+## 📦 Try the ROS2 Box (Prebuilt)
+
+Spin up a complete ROS2 Humble dev environment with:
+
+✅ ROS2 Humble
+✅ Codium
+✅ noVNC GUI (localhost:6080)
+
+### 📥 Download:
+👉 [ros2-humble-amd64.box (Google Drive)](https://drive.google.com/file/d/1jnvDkELTvB8j5azmaAQNRagf9WPDtIZr/view?usp=share_link)
+👉 [ros2-humble-arm64.box (Google Drive)](https://drive.google.com/file/d/1yP6OsV9DLgnG4Qs1H632AxcGOpE-G0Qz/view?usp=share_link)
+
+### 🔧 Usage:
+
+```bash
+hermit init ros2-humble
+hermit box add ros2-humble.box
+hermit up
+# open http://localhost:6080 for GUI in browser
+```
+
 ## 📦 Try the Dev Box (Prebuilt)
 
 Spin up a complete Ubuntu-based dev environment with:
