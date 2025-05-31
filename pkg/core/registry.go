@@ -1,3 +1,6 @@
+/*
+Copyright © 2025 Kodo Robotics
+*/
 package core
 
 import (

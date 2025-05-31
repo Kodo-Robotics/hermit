@@ -12,11 +12,12 @@ import (
 )
 
 type HermitConfig struct {
-	Box     string        `json:"box"`
-	Name    string        `json:"name"`
-	Memory  int           `json:"memory"`
-	CPUs    int           `json:"cpus"`
-	Network NetworkConfig `json:"network"`
+	Box       string        `json:"box"`
+	Name      string        `json:"name"`
+	Memory    int           `json:"memory"`
+	CPUs      int           `json:"cpus"`
+	Network   NetworkConfig `json:"network"`
+	Provision *Provision    `json:"provision,omitempty"`
 }
 
 type NetworkConfig struct {
@@ -29,6 +30,11 @@ type NetworkConfig struct {
 type Port struct {
 	Guest int `json:"guest"`
 	Host  int `json:"host"`
+}
+
+type Provision struct {
+	Type   string `json:"type"`
+	Script string `json:"script"`
 }
 
 func LoadConfig() (*HermitConfig, error) {

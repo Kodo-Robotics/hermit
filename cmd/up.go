@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Kodo-Robotics/hermit/pkg/config"
+	"github.com/Kodo-Robotics/hermit/pkg/core"
 	"github.com/Kodo-Robotics/hermit/pkg/utils"
 	"github.com/Kodo-Robotics/hermit/pkg/virtualbox"
 	"github.com/spf13/cobra"
@@ -80,6 +81,16 @@ var upCmd = &cobra.Command{
 		fmt.Println("🚀 Starting VM...")
 		if err := virtualbox.StartVM(cfg.Name); err != nil {
 			fmt.Println("❌ Error starting VM:", err)
+		}
+
+		if cfg.Provision != nil && cfg.Provision.Type == "shell" {
+			err := core.RunShellProvisionOverSSH(
+				"vagrant", "vagrant",
+				2222, cfg.Provision.Script,
+			)
+			if err != nil {
+				fmt.Println("⚠️ Provisioning failed:", err)
+			}
 		}
 	},
 }
