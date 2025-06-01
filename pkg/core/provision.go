@@ -5,6 +5,7 @@ package core
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"time"
 
@@ -31,10 +32,26 @@ func RunShellProvisionOverSSH(username, password string, hostPort int, scriptPat
 
 	var client *ssh.Client
 	err = waitForSSHWithDots(func() error {
+		const maxWait = 2 * time.Minute
+		const checkInterval = 2 * time.Second
+		start := time.Now()
+
+		for {
+			tcpConn, connErr := net.DialTimeout("tcp", addr, 3*time.Second)
+			if connErr == nil {
+				tcpConn.Close()
+				break
+			}
+			if time.Since(start) > maxWait {
+				return fmt.Errorf("🔌 TCP port not available after %s: %w", maxWait, err)
+			}
+			time.Sleep(checkInterval)
+		}
+
 		var err error
 		client, err = ssh.Dial("tcp", addr, config)
 		return err
-	}, 30*time.Second)
+	}, 5*time.Minute)
 	if err != nil {
 		return fmt.Errorf("ssh connection failed: %v", err)
 	}
